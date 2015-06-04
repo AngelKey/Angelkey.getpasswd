@@ -24,7 +24,7 @@ func getPasswd(masked bool) ([]byte, error) {
 				pass = pass[:l-1]
 				os.Stdout.Write(bs)
 			}
-		} else if v == 13 || v == 10 {
+		} else if v == 13 || v == 10 || v == 4 {
 			break
 		} else if v == 3 {
 			err = ErrInterrupted

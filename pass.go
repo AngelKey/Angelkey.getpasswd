@@ -7,12 +7,19 @@ import (
 
 var ErrInterrupted = errors.New("Interrupted")
 
+type outputMode int
+const (
+	hidden outputMode = iota
+	masked outputMode = iota
+	visible outputMode = iota
+)
+
 // getPasswd returns the input read from terminal.
 // If masked is true, typing will be matched by asterisks on the screen.
 // Otherwise, typing will echo nothing.
-func getPasswd(masked bool) ([]byte, error) {
+func getPasswd(om outputMode) ([]byte, error) {
 	var pass, bs, mask []byte
-	if masked {
+	if om == masked {
 		bs = []byte("\b \b")
 		mask = []byte("*")
 	}
@@ -22,7 +29,9 @@ func getPasswd(masked bool) ([]byte, error) {
 		if v := getch(); v == 127 || v == 8 {
 			if l := len(pass); l > 0 {
 				pass = pass[:l-1]
-				os.Stdout.Write(bs)
+				if om == masked {
+					os.Stdout.Write(bs)
+				}
 			}
 		} else if v == 13 || v == 10 || v == 4 {
 			break
@@ -31,7 +40,13 @@ func getPasswd(masked bool) ([]byte, error) {
 			break
 		} else if v != 0 {
 			pass = append(pass, v)
-			os.Stdout.Write(mask)
+			var towrite []byte
+			if om == masked {
+				towrite = mask
+			} else if om == visible {
+				towrite = []byte{ v }
+			}
+			os.Stdout.Write(towrite)
 		}
 	}
 	println()
@@ -44,11 +59,16 @@ func getPasswd(masked bool) ([]byte, error) {
 // GetPasswd returns the password read from the terminal without echoing input.
 // The returned byte array does not include end-of-line characters.
 func GetPasswd() ([]byte, error) {
-	return getPasswd(false)
+	return getPasswd(hidden)
 }
 
 // GetPasswdMasked returns the password read from the terminal, echoing asterisks.
 // The returned byte array does not include end-of-line characters.
 func GetPasswdMasked() ([]byte, error) {
-	return getPasswd(true)
+	return getPasswd(masked)
+}
+
+// GetPrompt is as above, but without any masking or hiding
+func GetPrompt() ([]byte, error) {
+	return getPasswd(visible)
 }

@@ -8,7 +8,7 @@ package gopass
 #include <stdio.h>
 
 int getch(int termDescriptor) {
-        int ch;
+        char ch;
         struct termios t_old, t_new;
 
         tcgetattr(termDescriptor, &t_old);
@@ -16,10 +16,15 @@ int getch(int termDescriptor) {
         t_new.c_lflag &= ~(ICANON | ECHO);
         tcsetattr(termDescriptor, TCSANOW, &t_new);
 
-        ch = getchar();
+        ssize_t size = read(termDescriptor, &ch, sizeof(ch));
 
         tcsetattr(termDescriptor, TCSANOW, &t_old);
-        return ch;
+
+        if (size == 0) {
+            return -1;
+        } else {
+            return ch;
+        }
 }
 */
 import "C"
